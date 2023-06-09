@@ -55,6 +55,35 @@ class Tile:
         return self.getEnthropy() > other.getEnthropy()
 
 
+class Sudoku:
+    grid = np.empty(shape=(9, 9), dtype=Tile)
+
+    def __init__(self):
+        for y in range(9):
+            for x in range(9):
+                self.grid[y, x] = Tile(y, x)
+
+    def __repr__(self):
+        display = f''
+        for y in range(9):
+            for x in range(9):
+                # display += (" " + str(target[y, x].value) + " ")
+                display += f'{str(self.grid[y, x].value):>4} '
+            display += "\n"
+        return display
+
+    def validateGrid(self):
+        for i in range(9):
+            try:
+                row_sum = sum([t.value for t in self.grid[i, :]])
+                col_sum = sum([t.value for t in self.grid[:, i]])
+            except TypeError:
+                return False
+            if row_sum != 45 or col_sum != 45:
+                return False
+        return True
+
+
 class UnfinishedError(Exception):
     pass
 
@@ -63,44 +92,7 @@ class FinishedError(Exception):
     pass
 
 
-grid = np.empty(shape=(9, 9), dtype=Tile)
-for y in range(9):
-    for x in range(9):
-        grid[y, x] = Tile(y, x)
-
-
-def displayGrid():
-    display = f''
-    for y in range(9):
-        for x in range(9):
-            display += f'{str(grid[y, x].value):>4} '
-        display += "\n"
-    print(display)
-
-
-def displayGridOptions():
-    display = f''
-    for y in range(9):
-        for x in range(9):
-            #display += (" " + str(target[y, x].value) + " ")
-            display += f'{str(len(grid[y, x].options)):>4} '
-        display += "\n"
-    print(display)
-
-
-def validateGrid():
-    for i in range(9):
-        try:
-            row_sum = sum([t.value for t in grid[i, :]])
-            col_sum = sum([t.value for t in grid[:, i]])
-        except TypeError:
-            return False
-        if row_sum != 45 or col_sum != 45:
-            return False
-    return True
-
-
-def getMinEnthropyCell():
+def getMinEnthropyCell(sudoku):
     """
     Return the cell with the least enthropy in the grid
     :return: a cell
@@ -108,16 +100,16 @@ def getMinEnthropyCell():
     # for now it wil always get the first option of the sorted list
     # TODO: add randomness
 
-    collapsed_filter = np.array([t.collapsed for t in grid.ravel()])
+    collapsed_filter = np.array([t.collapsed for t in sudoku.grid.ravel()])
 
     # just getting the non collapsed values
-    l = list(grid.ravel()[~collapsed_filter])
+    l = list(sudoku.grid.ravel()[~collapsed_filter])
 
     # return the first element of the sorted list
     return sorted(l)[0]
 
 
-def propagateChanges(cell):
+def propagateChanges(sudoku, cell):
     """
     Propagate for 1 cycle only the changes in the grid to neighbouring cells
     :param cell: the collapsed cell
@@ -127,10 +119,10 @@ def propagateChanges(cell):
 
     for i in range(9):
         # propagate on the row
-        grid[y, i].setOptions(cell.value)
+        sudoku.grid[y, i].setOptions(cell.value)
 
         # propagate on the column
-        grid[i, x].setOptions(cell.value)
+        sudoku.grid[i, x].setOptions(cell.value)
 
     # propagate around
     for y_offset in range(-1, 2, 1):
@@ -139,26 +131,27 @@ def propagateChanges(cell):
             new_x = np.clip(x + x_offset, 0, 8)
             if new_y == y and new_x == x: # selected cell
                 continue
-            grid[new_y, new_x].setOptions(cell.value)
+            sudoku.grid[new_y, new_x].setOptions(cell.value)
 
 
-def algorithm():
+def algorithm(sudoku):
     try:
-        selected_cell = getMinEnthropyCell()
+        selected_cell = getMinEnthropyCell(sudoku)
     except IndexError:
         raise FinishedError()
     try:
         selected_cell.collapse()
     except IndexError:
         raise UnfinishedError("Cannot finish")
-    propagateChanges(selected_cell)
-    displayGrid()
+    propagateChanges(sudoku, selected_cell)
+    print(sudoku)
 
 
 if __name__ == '__main__':
+    sudoku_grid = Sudoku()
     for i in range(100):
         try:
-            algorithm()
+            algorithm(sudoku_grid)
         except UnfinishedError:
             print(f'Failed in {i} steps')
             break
