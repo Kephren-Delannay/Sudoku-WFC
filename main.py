@@ -149,12 +149,19 @@ def algorithm(sudoku):
 
 if __name__ == '__main__':
     sudoku_grid = Sudoku()
-    for i in range(100):
+    i = 0
+    attempts = 1
+    while True:
         try:
             algorithm(sudoku_grid)
+            i += 1
         except UnfinishedError:
             print(f'Failed in {i} steps')
-            break
+            print('\n'*10)
+            sudoku_grid = Sudoku()
+            i = 0
+            attempts += 1
         except FinishedError:
-            print(f'Success in {i} steps')
+            print(f'Success in {attempts} attempts')
+            print(sudoku_grid.validateGrid())
             break
