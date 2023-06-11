@@ -55,6 +55,24 @@ class Tile:
         return self.getEnthropy() > other.getEnthropy()
 
 
+def getCellsCoordsInInterval(square: int):
+    coords = []
+    for y_off in range(0, 3):
+        for x_off in range(0, 3):
+            _x = ((3 * square) + x_off) % 9
+            _y = (square // 3) * 3 + y_off
+            coords.append((_y, _x))
+    return coords
+
+
+def getInterval(coords):
+    _y, _x = coords
+    row = _y // 3
+    col = _x // 3
+    inter = row * 3 + col
+    return inter
+
+
 class Sudoku:
     grid = np.empty(shape=(9, 9), dtype=Tile)
 
@@ -83,6 +101,46 @@ class Sudoku:
                 return False
         return True
 
+    def getMinEnthropyCell(self):
+        """
+        Return the cell with the least enthropy in the grid
+        :return: a cell
+        """
+        # for now it wil always get the first option of the sorted list
+        # TODO: add randomness
+
+        collapsed_filter = np.array([t.collapsed for t in self.grid.ravel()])
+
+        # just getting the non collapsed values
+        l = list(self.grid.ravel()[~collapsed_filter])
+
+        # return the first element of the sorted list
+        return sorted(l)[0]
+
+    def propagateChanges(self, cell):
+        """
+        Propagate for 1 cycle only the changes in the grid to neighbouring cells
+        :param cell: the collapsed cell
+        :return: None
+        """
+        y, x = cell.position
+
+        for i in range(9):
+            # propagate on the row
+            self.grid[y, i].setOptions(cell.value)
+
+            # propagate on the column
+            self.grid[i, x].setOptions(cell.value)
+
+        # propagate around
+        interval = getInterval(cell.position)
+        coords = getCellsCoordsInInterval(interval)
+
+        for pos in coords:
+            if pos == cell.position:
+                continue
+            self.grid[pos].setOptions(cell.value)
+
 
 class UnfinishedError(Exception):
     pass
@@ -92,58 +150,16 @@ class FinishedError(Exception):
     pass
 
 
-def getMinEnthropyCell(sudoku):
-    """
-    Return the cell with the least enthropy in the grid
-    :return: a cell
-    """
-    # for now it wil always get the first option of the sorted list
-    # TODO: add randomness
-
-    collapsed_filter = np.array([t.collapsed for t in sudoku.grid.ravel()])
-
-    # just getting the non collapsed values
-    l = list(sudoku.grid.ravel()[~collapsed_filter])
-
-    # return the first element of the sorted list
-    return sorted(l)[0]
-
-
-def propagateChanges(sudoku, cell):
-    """
-    Propagate for 1 cycle only the changes in the grid to neighbouring cells
-    :param cell: the collapsed cell
-    :return: None
-    """
-    y,x = cell.position
-
-    for i in range(9):
-        # propagate on the row
-        sudoku.grid[y, i].setOptions(cell.value)
-
-        # propagate on the column
-        sudoku.grid[i, x].setOptions(cell.value)
-
-    # propagate around
-    for y_offset in range(-1, 2, 1):
-        for x_offset in range(-1, 2, 1):
-            new_y = np.clip(y + y_offset, 0, 8)
-            new_x = np.clip(x + x_offset, 0, 8)
-            if new_y == y and new_x == x: # selected cell
-                continue
-            sudoku.grid[new_y, new_x].setOptions(cell.value)
-
-
 def algorithm(sudoku):
     try:
-        selected_cell = getMinEnthropyCell(sudoku)
+        selected_cell = sudoku.getMinEnthropyCell()
     except IndexError:
         raise FinishedError()
     try:
         selected_cell.collapse()
     except IndexError:
         raise UnfinishedError("Cannot finish")
-    propagateChanges(sudoku, selected_cell)
+    sudoku.propagateChanges(selected_cell)
     print(sudoku)
 
 
