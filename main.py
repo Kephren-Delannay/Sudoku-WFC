@@ -87,7 +87,11 @@ class Sudoku:
             for x in range(9):
                 # display += (" " + str(target[y, x].value) + " ")
                 display += f'{str(self.grid[y, x].value):>4} '
+                if (x + 1) % 3 == 0:
+                    display += '|'
             display += "\n"
+            if (y + 1) % 3 == 0:
+                display += '   ____________________________________________\n'
         return display
 
     def validateGrid(self):
@@ -160,7 +164,7 @@ def algorithm(sudoku):
     except IndexError:
         raise UnfinishedError("Cannot finish")
     sudoku.propagateChanges(selected_cell)
-    print(sudoku)
+    #print(sudoku)
 
 
 if __name__ == '__main__':
@@ -172,12 +176,14 @@ if __name__ == '__main__':
             algorithm(sudoku_grid)
             i += 1
         except UnfinishedError:
+            print(sudoku_grid)
             print(f'Failed in {i} steps')
             print('\n'*10)
             sudoku_grid = Sudoku()
             i = 0
             attempts += 1
         except FinishedError:
+            print(sudoku_grid)
             print(f'Success in {attempts} attempts')
             print(sudoku_grid.validateGrid())
             break
