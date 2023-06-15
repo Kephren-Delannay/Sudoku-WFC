@@ -191,7 +191,7 @@ def parseExampleMatrix(matrix: np.ndarray) -> tuple[Weights, set[Compatibility],
     """
     compatibilities: set[Compatibility] = set()
     weights: Weights = {}
-    options = list(set(input_matrix.flatten()))
+    options = list(set(matrix.flatten()))
 
     for y, row in enumerate(matrix):
         for x, cur_tile in enumerate(row):
@@ -226,10 +226,23 @@ input_matrix = np.array([
     ['S', 'S', 'S', 'S'],
 ], dtype=Tile)
 
-rander_colors = {'L': colorama.Fore.GREEN,
-          'C': colorama.Fore.YELLOW,
-          'S': colorama.Fore.BLUE}
+alt_input_matrix = np.array([
+    ['A', 'A', 'A', 'A'],
+    ['A', 'C', 'C', 'A'],
+    ['C', 'B', 'B', 'C'],
+    ['C', 'B', 'B', 'C'],
+    ['A', 'C', 'C', 'A'],
+    ['A', 'C', 'C', 'A'],
+    ['A', 'A', 'A', 'A'],
+], dtype=Tile)
 
-m = Model((20, 20), input_matrix)
+render_colors = {
+                'L': colorama.Fore.GREEN,
+                'C': colorama.Fore.YELLOW,
+                'S': colorama.Fore.BLUE,
+                'A': colorama.Fore.CYAN,
+                'B': colorama.Fore.MAGENTA}
+
+m = Model((10, 15), input_matrix)
 output = m.run()
-render(m, output, rander_colors)
+render(m, output, render_colors)
